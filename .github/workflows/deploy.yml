@@ -1,0 +1,46 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            set -e
+
+            cd /home/ec2-user/forum-api
+
+            git fetch --all
+            git reset --hard origin/${{ secrets.REPO_BRANCH }}
+
+            echo "${{ secrets.APP_ENV }}" > .env
+
+            npm install --production
+
+            TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+            pg_dump -U postgres forum_db > /home/ec2-user/db_backup_forum_db_$TIMESTAMP.sql || echo "Backup failed, continuing..."
+
+            npm run migrate:prod || echo "Migration failed, continuing..."
+
+            pm2 restart forum-api || pm2 start src/server.js --name forum-api
+            pm2 save
+
+            pm2 flush
+
+            sudo systemctl reload nginx
+
+            echo "Deploy complete"
