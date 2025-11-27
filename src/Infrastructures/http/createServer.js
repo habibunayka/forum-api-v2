@@ -88,7 +88,7 @@ const createServer = async (container) => {
     server.route({
         method: "GET",
         path: "/",
-        handler: () => "Hello world",
+        handler: () => "Hello world!",
     });
 
     await server.register([
