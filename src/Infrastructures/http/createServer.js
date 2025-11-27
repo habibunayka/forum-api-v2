@@ -85,6 +85,12 @@ const createServer = async (container) => {
         return h.continue;
     });
 
+    server.route({
+        method: "GET",
+        path: "/",
+        handler: () => "Hello world",
+    });
+
     await server.register([
         {
             plugin: users,
