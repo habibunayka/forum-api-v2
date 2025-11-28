@@ -30,12 +30,12 @@ jobs:
 
             echo "${{ secrets.APP_ENV }}" > .env
 
-            npm install --production
+            npm install
 
             TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
             pg_dump -U postgres forum_db > /home/ec2-user/db_backup_forum_db_$TIMESTAMP.sql || echo "Backup failed, continuing..."
 
-            npm run migrate:prod || echo "Migration failed, continuing..."
+            npm run migrate up
 
             pm2 restart forum-api || pm2 start src/server.js --name forum-api
             pm2 save
